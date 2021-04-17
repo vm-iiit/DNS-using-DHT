@@ -1,5 +1,5 @@
 import Utility_functions as uf
-
+url_prefix = "http://"
 
 class Node:
 
@@ -11,10 +11,11 @@ class Node:
 		self.hashed_node_ID = uf.get_hash(ip_address + port_number, m)
 
 		self.node_finger_table = finger_table(self.hashed_node_ID, m, ip_address)
-		self.predecessor = predecessor
-		self.successor = successor
+		self.predecessor = (self.hashed_node_ID, self.ip_address + ':' + self.port_number)
+		self.successor = (self.hashed_node_ID, self.ip_address + ':' + self.port_number)
 		self.url_ip_map = dict()
 		self.m = m
+
 
 
 	def check_in_range_excluded_included(self, lower_val, upper_val, check_val):
@@ -43,9 +44,9 @@ class Node:
 		for index in range(len(self.node_finger_table)-1, -1, -1):
 
 			if check_in_range_excluded_included(self.hashed_node_ID, hashed_value, self.node_finger_table[index][2]):
-				return self.node_finger_table[index][3]
+				return (self.node_finger_table[index][2], self.node_finger_table[index][3]) 
 
-		return self.ip_address
+		return self.successor
 
 
 	def find_successor(self, hashed_value):
@@ -57,11 +58,24 @@ class Node:
 			n_bar = self.closest_preceeding_node(hashed_value)
 			return n_bar.find_successor(hashed_value)
 
-	def join(self, new_node_IP):
-		pass
+	def join(self, successor):
+		self.predecessor = None
+		self.successor = successor
 
 
+	def stabilize(self):
+
+		response = requests.get(url_prefix + self.successor[1]+'/get_predecessor')
+
+		successors_predecessor = request.data.decode("utf-8")
+
+		if self.check_in_range_excluded_excluded(self.hashed_node_ID, self.successor[0], successors_predecessor[0]):
+			self.successor = successors_predecessor
 		
+		data = {'IP_port': self.ip_address + ':' + self.port_number, 'ID':self.hashed_node_ID}
+		response = requests.post(url_prefix + self.successor[1]+'/notify', json=data)
+
+
 
 
 class finger_table:

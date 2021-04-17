@@ -4,8 +4,9 @@ import threading
 from flask import Flask
 import Utility_functions as uf
 from node_structure import Node, finger_table
-from flaskthreads import AppContextThread
+# from flaskthreads import AppContextThread
 from flask import request
+import time
 
 import requests
 
@@ -16,6 +17,8 @@ failed_response = {'job':False}
 
 DNS_url = "127.0.0.1:6969/"
 url_prefix = "http://"
+
+refresh_time_seconds = 5
 
 app = Flask(__name__)
 
@@ -32,10 +35,23 @@ def get_ip():
 
 @app.route('/node_join', methods=['GET', 'POST'])
 def node_join():
-	
 
-	print(request.data.decode("utf-8"))
-	return successful_response
+	data_dict = request.data.decode("utf-8")
+
+	successor = DNS_server.find_successor(uf.get_hash(data_dict['ip']+data_dict['port'], DNS_server.m))
+	return successor
+
+@app.route('/get_predecessor')
+def return_predecessor():
+	return DNS_server.predecessor
+
+@app.route('/notify')
+def notify():
+	
+	data_dict = request.data.decode("utf-8")
+
+	if DNS_server.predecessor == None or DNS_server.check_in_range_excluded_excluded(DNS_server.predecessor[0], DNS_server.hashed_node_ID, data_dict['ID']):
+		DNS_server.predecessor = (data_dict['ID'], data_dict['IP_port'])
 
 if __name__ == "__main__":
 
@@ -73,21 +89,20 @@ if __name__ == "__main__":
 		
 		peer_ip_address, peer_port = response.text.strip().split(':')
 
-		data = {'a':10, 'b':12}
-		response = requests.post(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
+		data = {'ip':ip_address, 'port':port}
+		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
+
+		DNS_server.join(response.data.decode("utf-8"))
 
 
-		
+	while True:
 
+		DNS_server.stabilize()
 
+		DNS_server.fix_fingers()
 
+		DNS_server.check_predecessor()
 
-
-
-		
-
-
-
-
+		time.sleep(refresh_time_seconds)
 
 
