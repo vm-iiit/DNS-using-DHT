@@ -1,4 +1,7 @@
 import Utility_functions as uf
+from flask import request
+import requests
+
 url_prefix = "http://"
 
 class Node:
@@ -41,22 +44,33 @@ class Node:
 
 	def closest_preceeding_node(self, hashed_value):
 
-		for index in range(len(self.node_finger_table)-1, -1, -1):
+		for index in range(self.m-1, -1, -1):
 
-			if check_in_range_excluded_included(self.hashed_node_ID, hashed_value, self.node_finger_table[index][2]):
-				return (self.node_finger_table[index][2], self.node_finger_table[index][3]) 
+			if self.check_in_range_excluded_included(self.hashed_node_ID, hashed_value, self.node_finger_table.table[index][2]):
+				return (self.node_finger_table.table[index][2], self.node_finger_table.table[index][3]) 
 
 		return self.successor
 
 
 	def find_successor(self, hashed_value):
-
-		if check_in_range_excluded_included(self.hashed_node_ID, self.successor, hashed_value):
+		#print("**********************************")
+		if self.check_in_range_excluded_included(self.hashed_node_ID, self.successor[0], hashed_value):
+			#print("if", self.successor)
 			return self.successor
 
 		else:
 			n_bar = self.closest_preceeding_node(hashed_value)
-			return n_bar.find_successor(hashed_value)
+
+			if n_bar == (self.hashed_node_ID, self.ip_address + ':' + self.port_number):
+				#print("same node")
+				return self.successor
+			#print("else nbar",n_bar)
+			data = {'ID' : self.hashed_node_ID}
+			#print("calling node",self.ip_address, self.port_number)
+			response = requests.get(url_prefix + n_bar[1]+'/find_successor', json = data)
+			successor = request.data.decode("utf-8")
+			##print("got suc",successor)
+			return successor
 
 	def join(self, successor):
 		self.predecessor = None
@@ -66,8 +80,9 @@ class Node:
 	def stabilize(self):
 
 		response = requests.get(url_prefix + self.successor[1]+'/get_predecessor')
-
-		successors_predecessor = request.data.decode("utf-8")
+		##print("stabilize resp",response)
+		successors_predecessor = response.json()['val']
+ 
 
 		if self.check_in_range_excluded_excluded(self.hashed_node_ID, self.successor[0], successors_predecessor[0]):
 			self.successor = successors_predecessor
@@ -75,6 +90,12 @@ class Node:
 		data = {'IP_port': self.ip_address + ':' + self.port_number, 'ID':self.hashed_node_ID}
 		response = requests.post(url_prefix + self.successor[1]+'/notify', json=data)
 
+	def check_predecessor(self):
+
+		try:
+			response = requests.get(url_prefix + self.predecessor[1]+'/check_heartbeat')
+		except:
+			self.predecessor = None
 
 
 

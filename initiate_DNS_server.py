@@ -15,10 +15,10 @@ global DNS_server
 successful_response = {'job':True}
 failed_response = {'job':False}
 
-DNS_url = "127.0.0.1:6969/"
+DNS_url = "127.0.0.1:7070/"
 url_prefix = "http://"
 
-refresh_time_seconds = 5
+refresh_time_seconds = 3
 
 app = Flask(__name__)
 
@@ -33,25 +33,44 @@ def get_ip():
 	global DNS_server
 	return DNS_server.return_my_ip()
 
+@app.route("/check_heartbeat")
+def heartbeat():
+	return successful_response
+
 @app.route('/node_join', methods=['GET', 'POST'])
 def node_join():
 
-	data_dict = request.data.decode("utf-8")
+	data_dict = eval(request.data.decode("utf-8"))
 
-	successor = DNS_server.find_successor(uf.get_hash(data_dict['ip']+data_dict['port'], DNS_server.m))
+	arg = uf.get_hash(data_dict['ip']+data_dict['port'], DNS_server.m)
+
+	successor = DNS_server.find_successor(arg)
+	
+	return {'val':successor}
+
+@app.route('/find_successor', methods=['GET', 'POST'])
+def get_successor():
+	data_dict = eval(request.data.decode("utf-8"))
+
+	successor = DNS_server.find_successor(data_dict['ID'])
 	return successor
 
 @app.route('/get_predecessor')
 def return_predecessor():
-	return DNS_server.predecessor
+	#print("returning ",DNS_server.predecessor)
+	return {'val':DNS_server.predecessor}
 
-@app.route('/notify')
+@app.route('/notify', methods=['GET', 'POST'])
 def notify():
 	
-	data_dict = request.data.decode("utf-8")
+	data_dict = eval(request.data.decode("utf-8"))
 
-	if DNS_server.predecessor == None or DNS_server.check_in_range_excluded_excluded(DNS_server.predecessor[0], DNS_server.hashed_node_ID, data_dict['ID']):
+	if DNS_server.predecessor == None or \
+		DNS_server.predecessor == (DNS_server.hashed_node_ID, DNS_server.ip_address + ':' + DNS_server.port_number) or \
+		DNS_server.check_in_range_excluded_excluded(DNS_server.predecessor[0], DNS_server.hashed_node_ID, data_dict['ID']):
 		DNS_server.predecessor = (data_dict['ID'], data_dict['IP_port'])
+	
+	return successful_response
 
 if __name__ == "__main__":
 
@@ -90,19 +109,27 @@ if __name__ == "__main__":
 		peer_ip_address, peer_port = response.text.strip().split(':')
 
 		data = {'ip':ip_address, 'port':port}
+		#print("my ip",data)
 		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
-
-		DNS_server.join(response.data.decode("utf-8"))
-
+		#print("my ip",data)
+		#print("join resp",response.json())
+		DNS_server.join(tuple(response.json()['val']))
+		print("exit")
 
 	while True:
+		time.sleep(refresh_time_seconds)
 
 		DNS_server.stabilize()
 
-		DNS_server.fix_fingers()
+		# DNS_server.fix_fingers()
 
 		DNS_server.check_predecessor()
+		print("ip port",DNS_server.ip_address+DNS_server.port_number)
+		print("suc pred", DNS_server.successor, DNS_server.predecessor)
+		#print("loop")
 
-		time.sleep(refresh_time_seconds)
+		
+
+		
 
 
