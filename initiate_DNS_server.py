@@ -77,7 +77,6 @@ if __name__ == "__main__":
 	ip_port = sys.argv[1]
 	mode = sys.argv[2]              #i to initiate DNS, a to add node
 
-
 	ip_address, port = ip_port.split(':')
 
 	threading.Thread(target = app.run, kwargs={"host":ip_address, "port":port, "debug":False}).start()
@@ -111,10 +110,10 @@ if __name__ == "__main__":
 		data = {'ip':ip_address, 'port':port}
 		#print("my ip",data)
 		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
-		#print("my ip",data)
-		#print("join resp",response.json())
+
 		DNS_server.join(tuple(response.json()['val']))
-		print("exit")
+		print("prede succ **********")
+		print(DNS_server.predecessor, DNS_server.successor)
 
 	while True:
 		time.sleep(refresh_time_seconds)

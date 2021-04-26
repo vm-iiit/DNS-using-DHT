@@ -14,7 +14,8 @@ class Node:
 		self.hashed_node_ID = uf.get_hash(ip_address + port_number, m)
 
 		self.node_finger_table = finger_table(self.hashed_node_ID, m, ip_address)
-		self.predecessor = (self.hashed_node_ID, self.ip_address + ':' + self.port_number)
+		# self.predecessor = (self.hashed_node_ID, self.ip_address + ':' + self.port_number)
+		self.predecessor = None
 		self.successor = (self.hashed_node_ID, self.ip_address + ':' + self.port_number)
 		self.url_ip_map = dict()
 		self.m = m
@@ -79,16 +80,25 @@ class Node:
 
 	def stabilize(self):
 
+
 		response = requests.get(url_prefix + self.successor[1]+'/get_predecessor')
 		##print("stabilize resp",response)
 		successors_predecessor = response.json()['val']
- 
 
-		if self.check_in_range_excluded_excluded(self.hashed_node_ID, self.successor[0], successors_predecessor[0]):
+
+		if 	successors_predecessor is not None and	\
+			self.check_in_range_excluded_excluded(self.hashed_node_ID, self.successor[0], successors_predecessor[0]):
 			self.successor = successors_predecessor
-		
+
+		if successors_predecessor is not None and	\
+			self.successor == (self.hashed_node_ID, self.ip_address + ':' + self.port_number):
+			print("^^^^^^^^^^^^^^^^^^^^^")
+			self.successor = successors_predecessor
+
+		print("notify",self.successor)
 		data = {'IP_port': self.ip_address + ':' + self.port_number, 'ID':self.hashed_node_ID}
 		response = requests.post(url_prefix + self.successor[1]+'/notify', json=data)
+
 
 	def check_predecessor(self):
 
