@@ -68,6 +68,7 @@ def notify():
 	if DNS_server.predecessor == None or \
 		DNS_server.predecessor == (DNS_server.hashed_node_ID, DNS_server.ip_address + ':' + DNS_server.port_number) or \
 		DNS_server.check_in_range_excluded_excluded(DNS_server.predecessor[0], DNS_server.hashed_node_ID, data_dict['ID']):
+		
 		DNS_server.predecessor = (data_dict['ID'], data_dict['IP_port'])
 	
 	return successful_response
@@ -85,7 +86,6 @@ if __name__ == "__main__":
 	with open('config.txt', 'r') as input_file:
 		max_nodes_value = int(input_file.readline().strip().split('=')[1].strip())
 		m = math.ceil(math.log2(max_nodes_value))
-
 	
 	DNS_server = Node(ip_address, port, m)
 
@@ -112,8 +112,8 @@ if __name__ == "__main__":
 		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
 
 		DNS_server.join(tuple(response.json()['val']))
-		print("prede succ **********")
-		print(DNS_server.predecessor, DNS_server.successor)
+		# print("prede succ **********")
+		# print(DNS_server.predecessor, DNS_server.successor)
 
 	while True:
 		time.sleep(refresh_time_seconds)
@@ -123,8 +123,9 @@ if __name__ == "__main__":
 		# DNS_server.fix_fingers()
 
 		DNS_server.check_predecessor()
-		print("ip port",DNS_server.ip_address+DNS_server.port_number)
+		print("ip port",DNS_server.ip_address+':'+DNS_server.port_number)
 		print("suc pred", DNS_server.successor, DNS_server.predecessor)
+		print("node ID",DNS_server.hashed_node_ID)
 		#print("loop")
 
 		

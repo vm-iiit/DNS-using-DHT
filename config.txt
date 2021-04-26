@@ -1,1 +1,1 @@
-max_nodes = 10
+max_nodes = 100

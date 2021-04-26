@@ -88,14 +88,17 @@ class Node:
 
 		if 	successors_predecessor is not None and	\
 			self.check_in_range_excluded_excluded(self.hashed_node_ID, self.successor[0], successors_predecessor[0]):
+			
 			self.successor = successors_predecessor
 
 		if successors_predecessor is not None and	\
-			self.successor == (self.hashed_node_ID, self.ip_address + ':' + self.port_number):
-			print("^^^^^^^^^^^^^^^^^^^^^")
-			self.successor = successors_predecessor
+			self.successor == (self.hashed_node_ID, self.ip_address + ':' + self.port_number) and \
+			self.predecessor is not None and \
+			self.predecessor != (self.hashed_node_ID, self.ip_address + ':' + self.port_number)	:
+			
+			self.successor = self.predecessor
 
-		print("notify",self.successor)
+		# print("notify",self.successor)
 		data = {'IP_port': self.ip_address + ':' + self.port_number, 'ID':self.hashed_node_ID}
 		response = requests.post(url_prefix + self.successor[1]+'/notify', json=data)
 
