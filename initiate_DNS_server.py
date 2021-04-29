@@ -14,7 +14,8 @@ global DNS_server
 successful_response = {'job':True}
 failed_response = {'job':False}
 
-DNS_url = "127.0.0.1:7070/"
+# DNS_url = "127.0.0.1:7070/"
+loadbalancer_url = "127.0.0.1:9090"
 url_prefix = "http://"
 
 refresh_time_seconds = 1
@@ -30,7 +31,7 @@ def index():
 def get_ip():
 
 	global DNS_server
-	return DNS_server.return_my_ip()
+	return {'val': DNS_server.return_my_ip()}
 
 @app.route("/check_heartbeat")
 def heartbeat():
@@ -75,6 +76,7 @@ def notify():
 def url_query():
 
 	query_url = eval(request.data.decode("utf-8"))['val']
+
 	hashed_query = uf.get_hash(query_url, DNS_server.m)
 	
 	return {'val' :DNS_server.answer_query(hashed_query, query_url)}
@@ -117,23 +119,21 @@ if __name__ == "__main__":
 		DNS_server = Node(ip_address, port, m)
 		DNS_server.successor = DNS_server.hashed_node_ID
 
-		response = requests.get(url_prefix+DNS_url+'get_ip')
-		
+		response = requests.get(url_prefix+loadbalancer_url+'/get_ip')
 		peer_ip_address, peer_port = response.text.strip().split(':')
 
 		data = {'ip':ip_address, 'port':port}
-		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json = data)
+		response = requests.post(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json = data)
 
 		DNS_server.join(tuple(response.json()['val']))
 
 		data = {'val' : DNS_server.hashed_node_ID}
-		response = requests.get(url_prefix + DNS_server.successor [1]+'/get_data', json = data)
+		response = requests.post(url_prefix + DNS_server.successor [1]+'/get_data', json = data)
 		
 		DNS_server.update_data(response.json())
 
-		# print("\n\ncopied ",len(DNS_server.url_ip_map.keys()), "keys")
-		
-		# print(DNS_server.url_ip_map)
+	data = {'val' : DNS_server.port_number}
+	response = requests.post(url_prefix + loadbalancer_url+'/add_node', json = data)
 
 	while True:
 		time.sleep(refresh_time_seconds)
