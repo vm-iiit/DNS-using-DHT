@@ -74,15 +74,17 @@ def notify():
 @app.route('/query', methods=['GET', 'POST'])
 def url_query():
 
-	query_value = eval(request.data.decode("utf-8"))['val']
+	query_url = eval(request.data.decode("utf-8"))['val']
+	hashed_query = uf.get_hash(query_url, DNS_server.m)
+	
+	return {'val' :DNS_server.answer_query(hashed_query, query_url)}
 
-	if type(query_value) != int :
-		hashed_query = uf.get_hash(query_value, DNS_server.m)
+@app.route('/get_data', methods = ['GET', 'POST'])
+def get_data():
 
-	else:
-		hashed_query = query_value
+	predecessor_ID = eval(request.data.decode("utf-8"))['val']
 
-	return {'val' :DNS_server.answer_query(hashed_query)}
+	return DNS_server.predecessor_data(predecessor_ID)
 
 
 if __name__ == "__main__":
@@ -120,9 +122,18 @@ if __name__ == "__main__":
 		peer_ip_address, peer_port = response.text.strip().split(':')
 
 		data = {'ip':ip_address, 'port':port}
-		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
+		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json = data)
 
 		DNS_server.join(tuple(response.json()['val']))
+
+		data = {'val' : DNS_server.hashed_node_ID}
+		response = requests.get(url_prefix + DNS_server.successor [1]+'/get_data', json = data)
+		
+		DNS_server.update_data(response.json())
+
+		# print("\n\ncopied ",len(DNS_server.url_ip_map.keys()), "keys")
+		
+		# print(DNS_server.url_ip_map)
 
 	while True:
 		time.sleep(refresh_time_seconds)
@@ -134,10 +145,3 @@ if __name__ == "__main__":
 		print("ip port",DNS_server.ip_address+':'+DNS_server.port_number)
 		print("suc pred", DNS_server.successor, DNS_server.predecessor)
 		print("node ID",DNS_server.hashed_node_ID)
-
-
-		
-
-		
-
-

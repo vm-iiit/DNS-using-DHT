@@ -39,6 +39,15 @@ class Node:
 		else:
 			return False
 
+	def check_in_range_included_excluded(self, lower_val, upper_val, check_val):
+
+		if (lower_val <= check_val and check_val < upper_val) or \
+			(upper_val < lower_val and lower_val <= check_val) or \
+			(check_val < upper_val and upper_val < lower_val):
+			return True
+		else:
+			return False
+
 	def return_my_ip(self):
 		return self.ip_address+":"+self.port_number
 
@@ -112,14 +121,18 @@ class Node:
 		self.node_finger_table.table[self.next][2], self.node_finger_table.table[self.next][3] = updated_successor[0], updated_successor[1] 
 
 
-	def mapped_IP(self, hashed_query):
+	def mapped_IP(self, query_url):
 
-		return self.port_number
+		url_address = self.url_ip_map.get(query_url)
+		if  url_address == None:
+			return "Address not found"
+		else:
+			return url_address
 		
-	def answer_query(self, hashed_query):
+	def answer_query(self, hashed_query, query_url):
 
 		if self.check_in_range_excluded_included(self.predecessor[0], self.hashed_node_ID, hashed_query) or (self.successor == (self.hashed_node_ID, self.ip_address + ':' + self.port_number) and self.predecessor == (self.hashed_node_ID, self.ip_address + ':' + self.port_number)):
-			return self.mapped_IP(hashed_query)
+			return self.mapped_IP(query_url)
 
 		else:
 			responsible_node = self.node_finger_table.table[self.m-1][3]
@@ -133,17 +146,33 @@ class Node:
 					responsible_node = self.node_finger_table.table[index][3]
 					break
 			
-			data = {'val' : hashed_query}
+			data = {'val' : query_url}
 
 			if responsible_node != self.ip_address + ':' + self.port_number:
 				response = requests.post(url_prefix + responsible_node+'/query', json = data)
 				query_ip_address = response.json()['val']
 
 			else:
-				query_ip_address = self.mapped_IP(hashed_query)
+				query_ip_address = self.mapped_IP(query_url)
 
 			return query_ip_address
-					
+
+	
+	def update_data(self, new_dict):
+
+		self.url_ip_map.update(new_dict)
+
+	
+	def predecessor_data(self, predecessor_ID):
+
+		predecessor_dict = {}
+		for key in self.url_ip_map.keys():
+
+			if self.check_in_range_included_excluded(uf.get_hash(key, self.m), self.hashed_node_ID, predecessor_ID): 
+
+				predecessor_dict[key] = self.url_ip_map[key]
+
+		return predecessor_dict
 
 
 

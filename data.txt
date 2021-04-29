@@ -1,3 +1,12 @@
 www.google.com 142.250.193.228
 www.facebook.com 157.240.198.35
-www.tutorialspoint.com 117.18.237.42
+www.whatsapp.com 117.18.237.42
+www.bing.com 142.250.193.123
+www.arogyasetu.com 17.240.198.150
+www.cowin.com 11.18.237.250
+www.qualcomm.com 14.250.193.50
+www.zenoti.com 157.40.198.135
+www.bstack.com 117.18.237.142
+www.outlook.com 12.250.103.228
+www.iiith.com 157.24.198.23
+www.pmcaresfund.com 117.18.27.42
