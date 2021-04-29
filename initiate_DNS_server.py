@@ -4,7 +4,6 @@ import threading
 from flask import Flask
 import Utility_functions as uf
 from node_structure import Node, finger_table
-# from flaskthreads import AppContextThread
 from flask import request
 import time
 
@@ -18,7 +17,7 @@ failed_response = {'job':False}
 DNS_url = "127.0.0.1:7070/"
 url_prefix = "http://"
 
-refresh_time_seconds = 3
+refresh_time_seconds = 1
 
 app = Flask(__name__)
 
@@ -53,11 +52,10 @@ def get_successor():
 	data_dict = eval(request.data.decode("utf-8"))
 
 	successor = DNS_server.find_successor(data_dict['ID'])
-	return successor
+	return {'val': successor}
 
 @app.route('/get_predecessor')
 def return_predecessor():
-	#print("returning ",DNS_server.predecessor)
 	return {'val':DNS_server.predecessor}
 
 @app.route('/notify', methods=['GET', 'POST'])
@@ -72,6 +70,20 @@ def notify():
 		DNS_server.predecessor = (data_dict['ID'], data_dict['IP_port'])
 	
 	return successful_response
+
+@app.route('/query', methods=['GET', 'POST'])
+def url_query():
+
+	query_value = eval(request.data.decode("utf-8"))['val']
+
+	if type(query_value) != int :
+		hashed_query = uf.get_hash(query_value, DNS_server.m)
+
+	else:
+		hashed_query = query_value
+
+	return {'val' :DNS_server.answer_query(hashed_query)}
+
 
 if __name__ == "__main__":
 
@@ -108,25 +120,21 @@ if __name__ == "__main__":
 		peer_ip_address, peer_port = response.text.strip().split(':')
 
 		data = {'ip':ip_address, 'port':port}
-		#print("my ip",data)
 		response = requests.get(url_prefix+peer_ip_address+':'+peer_port+'/node_join', json=data)
 
 		DNS_server.join(tuple(response.json()['val']))
-		# print("prede succ **********")
-		# print(DNS_server.predecessor, DNS_server.successor)
 
 	while True:
 		time.sleep(refresh_time_seconds)
 
 		DNS_server.stabilize()
-
-		# DNS_server.fix_fingers()
-
+		DNS_server.fix_fingers()
 		DNS_server.check_predecessor()
+		
 		print("ip port",DNS_server.ip_address+':'+DNS_server.port_number)
 		print("suc pred", DNS_server.successor, DNS_server.predecessor)
 		print("node ID",DNS_server.hashed_node_ID)
-		#print("loop")
+
 
 		
 
