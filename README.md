@@ -19,3 +19,14 @@ This  is a python implementation of DNS service using [chord](https://pdos.csail
 - Space delimited key-value pairs are loaded from `data.txt`.
 - The ring size is taken as the next higher exponent of 2 from `max_nodes = value` present in `config.txt`. For example if `value` is `100`, the ring size will be `128`.
 
+### Dependencies
+`pip install flask requests` 
+
+
+
+
+
+### Data flow in the system
+
+![image](https://user-images.githubusercontent.com/54775788/118145883-b187ea00-b42b-11eb-89e9-d64fae757586.png)
+
